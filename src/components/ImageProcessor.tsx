@@ -4,8 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Send } from "lucide-react";
+import { Upload, Send, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const ImageProcessor = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -14,6 +15,7 @@ const ImageProcessor = () => {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [responseImage, setResponseImage] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -35,26 +37,46 @@ const ImageProcessor = () => {
     }
 
     setIsLoading(true);
+    setError(null);
     const formData = new FormData();
     formData.append('image', selectedImage);
     formData.append('prompt', prompt);
 
     try {
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        body: formData,
-        mode: 'no-cors', // Handle CORS issues
-      });
-
-      // Since we're using no-cors, simulate success
-      // In a real app, handle the actual response from n8n
-      toast.success("Request sent successfully!");
+      console.log("Sending request to:", webhookUrl);
       
-      // For demo purposes, we'll just show the input image as response
-      // In reality, you'd handle the actual response image from n8n
-      setResponseImage(imagePreview);
+      // Check if the webhook URL is a localhost URL
+      const isLocalhost = webhookUrl.includes('localhost') || webhookUrl.includes('127.0.0.1');
+      
+      if (isLocalhost) {
+        setError(`Connection to ${webhookUrl} failed. Your browser cannot connect to localhost from a deployed application due to CORS restrictions. 
+        Please either:
+        1. Deploy your n8n instance and use that URL instead
+        2. Use a CORS proxy service
+        3. Test this app locally on your machine`);
+        
+        // Simulate a response for testing purposes
+        setTimeout(() => {
+          setResponseImage(imagePreview);
+          toast.info("Using preview image as simulated response for testing");
+        }, 1000);
+      } else {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          body: formData,
+          mode: 'no-cors', // Handle CORS issues
+        });
+
+        console.log("Response received");
+        toast.success("Request sent successfully!");
+        
+        // For demo purposes, we'll just show the input image as response
+        // In reality, you'd handle the actual response image from n8n
+        setResponseImage(imagePreview);
+      }
     } catch (error) {
       console.error('Error:', error);
+      setError(`Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast.error("Failed to process image");
     } finally {
       setIsLoading(false);
@@ -69,6 +91,16 @@ const ImageProcessor = () => {
           <p className="text-gray-600">Upload an image, add a prompt, and process with GPT</p>
         </div>
 
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription className="whitespace-pre-line">
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium">n8n Webhook URL</label>
@@ -79,6 +111,11 @@ const ImageProcessor = () => {
               onChange={(e) => setWebhookUrl(e.target.value)}
               required
             />
+            {webhookUrl.includes('localhost') && (
+              <p className="text-amber-600 text-xs mt-1">
+                ⚠️ Using localhost URLs may not work from deployed applications due to CORS restrictions
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
