@@ -53,7 +53,9 @@ const ImageProcessor = () => {
         Please either:
         1. Deploy your n8n instance and use that URL instead
         2. Use a CORS proxy service
-        3. Test this app locally on your machine`);
+        3. Test this app locally on your machine
+        
+        Important: Make sure to enable CORS on your n8n Webhook node!`);
         
         // Simulate a response for testing purposes
         setTimeout(() => {
@@ -61,18 +63,29 @@ const ImageProcessor = () => {
           toast.info("Using preview image as simulated response for testing");
         }, 1000);
       } else {
+        // Use regular fetch with proper response handling
         const response = await fetch(webhookUrl, {
           method: 'POST',
           body: formData,
-          mode: 'no-cors', // Handle CORS issues
         });
 
         console.log("Response received");
-        toast.success("Request sent successfully!");
         
-        // For demo purposes, we'll just show the input image as response
-        // In reality, you'd handle the actual response image from n8n
-        setResponseImage(imagePreview);
+        // Parse the JSON response from n8n
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Parsed response data:", data);
+          
+          // Set the image URL from the response
+          if (data && data.image_url) {
+            setResponseImage(data.image_url);
+            toast.success("Image processed successfully!");
+          } else {
+            throw new Error("Response did not contain an image URL");
+          }
+        } else {
+          throw new Error(`HTTP error: ${response.status}`);
+        }
       }
     } catch (error) {
       console.error('Error:', error);
