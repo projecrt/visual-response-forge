@@ -11,7 +11,6 @@ const ImageProcessor = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [prompt, setPrompt] = useState("");
-  const [webhookUrl, setWebhookUrl] = useState("");
   const [responseImage, setResponseImage] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,22 +92,6 @@ const ImageProcessor = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">n8n Webhook URL</label>
-            <Input
-              type="url"
-              placeholder="Enter your n8n webhook URL"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              required
-            />
-            {webhookUrl.includes('localhost') && (
-              <p className="text-amber-600 text-xs mt-1">
-                ⚠️ Using localhost URLs may not work from deployed applications due to CORS restrictions
-              </p>
-            )}
-          </div>
-
           <div className="space-y-2">
             <label className="block text-sm font-medium">Upload Image</label>
             <div className="border-2 border-dashed rounded-lg p-4 text-center">
