@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,47 +44,26 @@ const ImageProcessor = () => {
     try {
       console.log("Sending request to:", webhookUrl);
       
-      // Check if the webhook URL is a localhost URL
-      const isLocalhost = webhookUrl.includes('localhost') || webhookUrl.includes('127.0.0.1');
-      
-      if (isLocalhost) {
-        setError(`Connection to ${webhookUrl} failed. Your browser cannot connect to localhost from a deployed application due to CORS restrictions. 
-        Please either:
-        1. Deploy your n8n instance and use that URL instead
-        2. Use a CORS proxy service
-        3. Test this app locally on your machine
-        
-        Important: Make sure to enable CORS on your n8n Webhook node!`);
-        
-        // Simulate a response for testing purposes
-        setTimeout(() => {
-          setResponseImage(imagePreview);
-          toast.info("Using preview image as simulated response for testing");
-        }, 1000);
-      } else {
-        // Use regular fetch with proper response handling
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          body: formData,
-        });
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        body: formData,
+      });
 
-        console.log("Response received");
+      console.log("Response received:", response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Parsed response data:", data);
         
-        // Parse the JSON response from n8n
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Parsed response data:", data);
-          
-          // Set the image URL from the response
-          if (data && data.image_url) {
-            setResponseImage(data.image_url);
-            toast.success("Image processed successfully!");
-          } else {
-            throw new Error("Response did not contain an image URL");
-          }
+        if (data && data.image_url) {
+          setResponseImage(data.image_url);
+          toast.success("Image processed successfully!");
         } else {
-          throw new Error(`HTTP error: ${response.status}`);
+          throw new Error("Response did not contain an image URL");
         }
+      } else {
+        const errorText = await response.text();
+        throw new Error(`HTTP error ${response.status}: ${errorText}`);
       }
     } catch (error) {
       console.error('Error:', error);
