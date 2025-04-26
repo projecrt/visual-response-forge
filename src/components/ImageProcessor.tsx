@@ -30,8 +30,8 @@ const ImageProcessor = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedImage || !prompt || !webhookUrl) {
-      toast.error("Please provide an image, prompt, and webhook URL");
+    if (!selectedImage || !prompt) {
+      toast.error("Please provide both an image and prompt");
       return;
     }
 
@@ -42,18 +42,18 @@ const ImageProcessor = () => {
     formData.append('prompt', prompt);
 
     try {
-      console.log("Sending request to:", webhookUrl);
+      console.log("Sending request to webhook with image and prompt");
       
-      const response = await fetch(webhookUrl, {
+      const response = await fetch('http://localhost:5678/webhook-test/generate-image', {
         method: 'POST',
         body: formData,
       });
 
-      console.log("Response received:", response.status);
+      console.log("Response status:", response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log("Parsed response data:", data);
+        console.log("Response data:", data);
         
         if (data && data.image_url) {
           setResponseImage(data.image_url);
