@@ -14,6 +14,7 @@ const ImageProcessor = () => {
   const [responseImage, setResponseImage] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState("http://localhost:5678/webhook-test/generate-image");
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,9 +42,9 @@ const ImageProcessor = () => {
     formData.append('prompt', prompt);
 
     try {
-      console.log("Sending request to webhook with image and prompt");
+      console.log(`Sending request to webhook: ${webhookUrl}`);
       
-      const response = await fetch('http://localhost:5678/webhook-test/generate-image', {
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         body: formData,
       });
@@ -92,6 +93,22 @@ const ImageProcessor = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Webhook URL</label>
+            <Input
+              type="url"
+              placeholder="Enter your webhook URL"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              required
+            />
+            {webhookUrl.includes('localhost') && (
+              <p className="text-amber-600 text-xs mt-1">
+                ⚠️ Using localhost URLs may not work from deployed applications due to CORS restrictions
+              </p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <label className="block text-sm font-medium">Upload Image</label>
             <div className="border-2 border-dashed rounded-lg p-4 text-center">
